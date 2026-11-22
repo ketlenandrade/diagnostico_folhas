@@ -35,7 +35,11 @@ python main.py demo                            # testa as regras sem a IA
   Mostra acurácia, tabela por classe e matriz de confusão, e salva `relatorio_metricas.txt` e `matriz_confusao.png`.
 
 ## Dados
-Baixe o dataset **PlantVillage** (`git clone https://github.com/spMohanty/PlantVillage-Dataset`, pasta `raw/color`) e copie as pastas
+Baixe o dataset **PlantVillage** (`git clone https://github.com/spMohanty/PlantVillage-Dataset`) e rode:
+```
+python preparar_dados.py PlantVillage-Dataset/raw/color --limite 500
+```
+O script copia as 4 classes de tomate e separa 80% para `dados/` e 20% para `teste/`. Para fazer manualmente, copie as pastas
 `Tomato___healthy`, `Tomato___Late_blight`, `Tomato___Early_blight` e `Tomato___Bacterial_spot`:
 
 ```
