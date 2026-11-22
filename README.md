@@ -11,7 +11,7 @@ O sistema recebe a foto de uma folha e informa a doença, o grau de certeza e o 
 | `classificador.py` | **IA**: rede MobileNetV2 (transferência de aprendizado) classifica a foto em `saudavel`, `requeima`, `pinta_preta` ou `mancha_bacteriana` |
 | `sistema_especialista.py` | **Sistema especialista**: base de fatos, 19 regras SE… ENTÃO…, motor de inferência (encadeamento para frente) e módulo de explicação |
 | `avaliacao.py` | **Métricas**: acurácia, precisão, recall, F1-score e matriz de confusão |
-| `interface.py` | **Interface gráfica** (Tkinter) |
+| `interface.py` | **Interface gráfica moderna** (CustomTkinter, modo claro e escuro) |
 | `main.py` | Programa principal |
 
 ## Instalação

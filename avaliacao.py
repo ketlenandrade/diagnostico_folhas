@@ -134,24 +134,31 @@ def relatorio_texto(m):
     return "\n".join(linhas)
 
 
-def figura_matriz(m):
-    """Cria a figura (matplotlib) da matriz de confusão."""
+def figura_matriz(m, escuro=False, fundo=None):
+    """Cria a figura (matplotlib) da matriz de confusão, no tema claro ou escuro."""
     from matplotlib.figure import Figure
     classes, matriz = m["classes"], m["matriz"]
-    fig = Figure(figsize=(5.0, 4.6), dpi=100)
+    fundo = fundo or ("#1C1D21" if escuro else "#FFFFFF")
+    texto = "#E5E7EB" if escuro else "#1F2937"
+    fig = Figure(figsize=(4.5, 4.2), dpi=100, facecolor=fundo)
     ax = fig.add_subplot(111)
+    ax.set_facecolor(fundo)
     im = ax.imshow(matriz, cmap="Greens")
-    fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-    ax.set_xticks(range(len(classes)), labels=classes, rotation=35, ha="right", fontsize=8)
+    barra = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    barra.ax.tick_params(colors=texto, labelsize=8)
+    barra.outline.set_visible(False)
+    ax.set_xticks(range(len(classes)), labels=classes, rotation=30, ha="right", fontsize=8)
     ax.set_yticks(range(len(classes)), labels=classes, fontsize=8)
-    ax.set_xlabel("Classe prevista")
-    ax.set_ylabel("Classe real")
-    ax.set_title(f"Matriz de confusão (acurácia {m['acuracia']:.1%})")
+    ax.tick_params(colors=texto, length=0)
+    for lado in ax.spines.values():
+        lado.set_visible(False)
+    ax.set_xlabel("Classe prevista", color=texto, fontsize=9)
+    ax.set_ylabel("Classe real", color=texto, fontsize=9)
     maior = max(max(l) for l in matriz) or 1
     for i, linha in enumerate(matriz):
         for j, v in enumerate(linha):
-            ax.text(j, i, v, ha="center", va="center",
-                    color="white" if v > maior / 2 else "black", fontsize=9)
+            ax.text(j, i, v, ha="center", va="center", fontsize=10, fontweight="bold",
+                    color="white" if v > maior / 2 else "#1F2937")
     fig.tight_layout()
     return fig
 
