@@ -18,8 +18,9 @@ import json
 import os
 
 TAMANHO = (224, 224)
-ARQ_MODELO = "modelo_folhas.keras"
-ARQ_CLASSES = "classes.json"
+PASTA_PROJETO = os.path.dirname(os.path.abspath(__file__))
+ARQ_MODELO = os.path.join(PASTA_PROJETO, "modelo_folhas.keras")
+ARQ_CLASSES = os.path.join(PASTA_PROJETO, "classes.json")
 
 # nomes originais do PlantVillage -> nomes usados pelo sistema especialista
 MAPA_PLANTVILLAGE = {
@@ -29,8 +30,17 @@ MAPA_PLANTVILLAGE = {
     "Tomato___Bacterial_spot": "mancha_bacteriana",
 }
 
+_modelo = None
+_classes = None
+
+
+def modelo_existe():
+    return os.path.exists(ARQ_MODELO) and os.path.exists(ARQ_CLASSES)
+
 
 def treinar(pasta_dados, epocas=5):
+    """Treina o modelo e devolve a acurácia na validação."""
+    global _modelo, _classes
     import tensorflow as tf
     from tensorflow import keras
 
@@ -53,7 +63,7 @@ def treinar(pasta_dados, epocas=5):
 
     modelo = keras.Sequential([
         keras.Input(shape=TAMANHO + (3,)),
-        keras.layers.RandomFlip("horizontal"),       # aumento de dados
+        keras.layers.RandomFlip("horizontal"),         # aumento de dados
         keras.layers.RandomRotation(0.1),
         keras.layers.Rescaling(1 / 127.5, offset=-1),  # pré-processamento da MobileNetV2
         base,
@@ -74,22 +84,54 @@ def treinar(pasta_dados, epocas=5):
         json.dump(classes, f)
     print(f"Modelo salvo em {ARQ_MODELO}")
 
+    _modelo, _classes = modelo, classes
+    return float(acuracia)
+
+
+def carregar():
+    """Carrega o modelo do disco uma única vez."""
+    global _modelo, _classes
+    if _modelo is None:
+        if not modelo_existe():
+            raise FileNotFoundError(
+                "Modelo não encontrado. Treine a IA primeiro "
+                "(aba Métricas > Treinar IA, ou: python main.py treinar --dados <pasta>).")
+        from tensorflow import keras
+        _modelo = keras.models.load_model(ARQ_MODELO)
+        with open(ARQ_CLASSES, encoding="utf-8") as f:
+            _classes = json.load(f)
+    return _modelo, _classes
+
+
+def classes_do_modelo():
+    return carregar()[1]
+
+
+def _ler_imagem(caminho):
+    import numpy as np
+    from PIL import Image
+    img = Image.open(caminho).convert("RGB").resize(TAMANHO)
+    return np.asarray(img, dtype="float32")
+
+
+def classificar_lote(caminhos, tamanho_lote=32, progresso=None):
+    """Classifica várias imagens. Devolve lista de (classe, confiança, {classe: prob})."""
+    import numpy as np
+    modelo, classes = carregar()
+    resultados = []
+    for inicio in range(0, len(caminhos), tamanho_lote):
+        parte = caminhos[inicio:inicio + tamanho_lote]
+        x = np.stack([_ler_imagem(c) for c in parte])
+        probs = modelo.predict(x, verbose=0)
+        for p in probs:
+            i = int(np.argmax(p))
+            resultados.append((classes[i], float(p[i]),
+                               {c: float(v) for c, v in zip(classes, p)}))
+        if progresso:
+            progresso(len(resultados), len(caminhos))
+    return resultados
+
 
 def classificar(caminho_imagem):
-    """Retorna (classe, confiança, {classe: probabilidade})."""
-    if not os.path.exists(ARQ_MODELO):
-        raise FileNotFoundError("Modelo não encontrado. Rode primeiro: python main.py treinar --dados <pasta>")
-
-    import numpy as np
-    from tensorflow import keras
-
-    modelo = keras.models.load_model(ARQ_MODELO)
-    with open(ARQ_CLASSES, encoding="utf-8") as f:
-        classes = json.load(f)
-
-    img = keras.utils.load_img(caminho_imagem, target_size=TAMANHO)
-    x = np.expand_dims(keras.utils.img_to_array(img), 0)
-    probs = modelo.predict(x, verbose=0)[0]
-
-    i = int(np.argmax(probs))
-    return classes[i], float(probs[i]), {c: float(p) for c, p in zip(classes, probs)}
+    """Classifica uma imagem. Devolve (classe, confiança, {classe: prob})."""
+    return classificar_lote([caminho_imagem])[0]

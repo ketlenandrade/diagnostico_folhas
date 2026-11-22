@@ -6,27 +6,47 @@ Pequenos agricultores perdem parte da colheita por não identificarem a tempo as
 O sistema recebe a foto de uma folha e informa a doença, o grau de certeza e o tratamento.
 
 ## Arquitetura
-1. **IA – `classificador.py`**: rede MobileNetV2 (transferência de aprendizado) classifica a foto em
-   `saudavel`, `requeima`, `pinta_preta` ou `mancha_bacteriana`, com nível de confiança.
-2. **Sistema especialista – `sistema_especialista.py`**:
-   - Base de fatos: resultado da IA + respostas do usuário
-   - Base de conhecimento: 19 regras SE… ENTÃO…
-   - Motor de inferência: encadeamento para frente (forward chaining)
-   - Módulo de explicação: mostra as regras usadas
-3. **Programa principal – `main.py`**: junta as duas partes.
+| Arquivo | Função |
+|---|---|
+| `classificador.py` | **IA**: rede MobileNetV2 (transferência de aprendizado) classifica a foto em `saudavel`, `requeima`, `pinta_preta` ou `mancha_bacteriana` |
+| `sistema_especialista.py` | **Sistema especialista**: base de fatos, 19 regras SE… ENTÃO…, motor de inferência (encadeamento para frente) e módulo de explicação |
+| `avaliacao.py` | **Métricas**: acurácia, precisão, recall, F1-score e matriz de confusão |
+| `interface.py` | **Interface gráfica** (Tkinter) |
+| `main.py` | Programa principal |
 
 ## Instalação
 ```
 pip install -r requirements.txt
 ```
+(No Windows com Python da Microsoft Store, use `python3.11` ou o caminho completo do `python3.11.exe`.)
 
 ## Uso
 ```
-python main.py demo                      # testa as regras sem treinar a IA
-python main.py treinar --dados dados/    # treina a IA
-python main.py diagnosticar folha.jpg    # diagnóstico completo
+python main.py                                 # abre a interface gráfica
+python main.py treinar --dados dados/          # treina a IA
+python main.py avaliar --teste teste/          # calcula as métricas
+python main.py diagnosticar folha.jpg          # diagnóstico pelo terminal
+python main.py demo                            # testa as regras sem a IA
 ```
 
-## Dados para treino
-Baixe o dataset **PlantVillage** (Kaggle) e copie para `dados/` apenas as pastas:
-`Tomato___healthy`, `Tomato___Late_blight`, `Tomato___Early_blight`, `Tomato___Bacterial_spot`.
+### Interface gráfica
+- **Aba Diagnóstico**: abra uma foto → veja a imagem e as probabilidades da IA → marque os sintomas → clique em *Diagnosticar*.
+- **Aba Métricas**: *Treinar IA* (escolha a pasta `dados/`) e *Avaliar pasta de teste* (escolha `teste/`).
+  Mostra acurácia, tabela por classe e matriz de confusão, e salva `relatorio_metricas.txt` e `matriz_confusao.png`.
+
+## Dados
+Baixe o dataset **PlantVillage** (`git clone https://github.com/spMohanty/PlantVillage-Dataset`, pasta `raw/color`) e copie as pastas
+`Tomato___healthy`, `Tomato___Late_blight`, `Tomato___Early_blight` e `Tomato___Bacterial_spot`:
+
+```
+dados/   ~80% das imagens de cada classe (treino)
+teste/   ~20% das imagens de cada classe (NUNCA usadas no treino)
+```
+Para um teste com fotos reais de campo, use o dataset **PlantDoc**.
+
+## Métricas
+- **Acurácia**: acertos ÷ total de imagens
+- **Precisão**: das imagens que a IA disse ser da classe X, quantas eram realmente X
+- **Recall**: das imagens que eram da classe X, quantas a IA acertou
+- **F1-score**: média harmônica entre precisão e recall
+- **Matriz de confusão**: linhas = classe real, colunas = classe prevista

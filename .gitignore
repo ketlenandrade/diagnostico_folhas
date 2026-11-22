@@ -7,3 +7,5 @@ dados/*
 teste/
 modelo_folhas.keras
 classes.json
+relatorio_metricas.txt
+matriz_confusao.png

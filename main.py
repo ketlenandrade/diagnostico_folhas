@@ -3,8 +3,10 @@ Sistema de diagnóstico de doenças em folhas de tomate
 IA (classificação de imagens) + Sistema Especialista (regras)
 
 Uso:
+  python main.py                                     # abre a interface gráfica
   python main.py treinar --dados pasta_com_imagens   # treina a IA
-  python main.py diagnosticar foto.jpg               # diagnóstico completo
+  python main.py avaliar --teste pasta_de_teste      # calcula as métricas
+  python main.py diagnosticar foto.jpg               # diagnóstico no terminal
   python main.py demo                                # testa o sistema especialista sem a IA
 """
 import argparse
@@ -52,24 +54,27 @@ def main():
 
     sub.add_parser("demo", help="simula o resultado da IA para testar as regras")
 
+    a = sub.add_parser("avaliar", help="calcula as métricas em uma pasta de teste")
+    a.add_argument("--teste", required=True)
+
+    sub.add_parser("interface", help="abre a interface gráfica (padrão)")
+
     args = p.parse_args()
 
-    # Sem argumentos (ex.: botão Executar do VS Code): mostra um menu
-    if args.comando is None:
-        print("=== Diagnóstico de doenças em folhas de tomate ===")
-        print("  1. Demonstração (testar as regras sem a IA)")
-        print("  2. Diagnosticar uma foto")
-        print("  3. Treinar a IA")
-        opcao = input("Escolha (1-3): ").strip()
-        if opcao == "2":
-            args.comando, args.imagem = "diagnosticar", input("Caminho da foto: ").strip().strip('"')
-        elif opcao == "3":
-            args.comando, args.dados = "treinar", input("Pasta com as imagens: ").strip().strip('"')
-            args.epocas = 5
-        else:
-            args.comando = "demo"
+    # Sem argumentos (ex.: botão Executar do VS Code): abre a interface gráfica
+    if args.comando in (None, "interface"):
+        from interface import iniciar
+        iniciar()
 
-    if args.comando == "treinar":
+    elif args.comando == "avaliar":
+        from avaliacao import avaliar, relatorio_texto, salvar_resultados
+        m = avaliar(args.teste, progresso=lambda f, t: print(f"\r{f}/{t} imagens", end=""))
+        print("\n")
+        print(relatorio_texto(m))
+        txt, png = salvar_resultados(m)
+        print(f"\nSalvo em: {txt} e {png}")
+
+    elif args.comando == "treinar":
         from classificador import treinar
         treinar(args.dados, args.epocas)
 
