@@ -41,7 +41,7 @@ def diagnosticar(classe, confianca):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
-    sub = p.add_subparsers(dest="comando", required=True)
+    sub = p.add_subparsers(dest="comando")
 
     t = sub.add_parser("treinar", help="treina o classificador de imagens")
     t.add_argument("--dados", required=True)
@@ -53,6 +53,21 @@ def main():
     sub.add_parser("demo", help="simula o resultado da IA para testar as regras")
 
     args = p.parse_args()
+
+    # Sem argumentos (ex.: botão Executar do VS Code): mostra um menu
+    if args.comando is None:
+        print("=== Diagnóstico de doenças em folhas de tomate ===")
+        print("  1. Demonstração (testar as regras sem a IA)")
+        print("  2. Diagnosticar uma foto")
+        print("  3. Treinar a IA")
+        opcao = input("Escolha (1-3): ").strip()
+        if opcao == "2":
+            args.comando, args.imagem = "diagnosticar", input("Caminho da foto: ").strip().strip('"')
+        elif opcao == "3":
+            args.comando, args.dados = "treinar", input("Pasta com as imagens: ").strip().strip('"')
+            args.epocas = 5
+        else:
+            args.comando = "demo"
 
     if args.comando == "treinar":
         from classificador import treinar
